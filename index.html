@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>BumpBuddy — Teman Kehamilan</title>
+  <meta name="description" content="Aplikasi pendamping kehamilan untuk melacak kontraksi, gerakan bayi, dan persalinan.">
+  
+  <!-- PWA Meta Tags -->
+  <link rel="manifest" href="manifest.json">
+  <meta name="theme-color" content="#0f0e17">
+  <link rel="apple-touch-icon" href="img/icon.svg">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="BumpBuddy">
+
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <div id="app">
+    <!-- Header -->
+    <header id="app-header">
+      <div class="header-inner">
+        <div class="logo">
+          <span class="logo-icon">🤰</span>
+          <span class="logo-text">BumpBuddy</span>
+        </div>
+      </div>
+    </header>
+
+    <!-- Due Date Countdown Hero -->
+    <section id="countdown-hero" class="card hero-card">
+      <p class="hero-label">Hari Perkiraan Lahir (HPL)</p>
+      <h1 class="hero-date">14 April 2026</h1>
+      <div class="countdown-grid" id="countdown-grid">
+        <div class="countdown-item">
+          <span class="countdown-value" id="cd-days">--</span>
+          <span class="countdown-unit">Hari</span>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-item">
+          <span class="countdown-value" id="cd-hours">--</span>
+          <span class="countdown-unit">Jam</span>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-item">
+          <span class="countdown-value" id="cd-minutes">--</span>
+          <span class="countdown-unit">Menit</span>
+        </div>
+        <div class="countdown-sep">:</div>
+        <div class="countdown-item">
+          <span class="countdown-value" id="cd-seconds">--</span>
+          <span class="countdown-unit">Detik</span>
+        </div>
+      </div>
+      <div class="hero-week" id="hero-week"></div>
+    </section>
+
+    <!-- Tab Navigation -->
+    <nav id="tab-nav">
+      <button class="tab-btn active" data-tab="contractions">
+        <span class="tab-icon">⏱️</span>
+        <span class="tab-label">Kontraksi</span>
+      </button>
+      <button class="tab-btn" data-tab="movements">
+        <span class="tab-icon">👶</span>
+        <span class="tab-label">Gerakan</span>
+      </button>
+      <button class="tab-btn" data-tab="symptoms">
+        <span class="tab-icon">📝</span>
+        <span class="tab-label">Gejala</span>
+      </button>
+      <button class="tab-btn" data-tab="bag">
+        <span class="tab-icon">🎒</span>
+        <span class="tab-label">Tas RS</span>
+      </button>
+    </nav>
+
+    <!-- Tab Panels -->
+    <main id="tab-panels">
+      <!-- ===== CONTRACTIONS ===== -->
+      <section id="panel-contractions" class="panel active">
+        <!-- Labor Alert Banner -->
+        <div id="labor-alert" class="alert-banner hidden">
+          <div class="alert-icon">🚨</div>
+          <div class="alert-text">
+            <strong id="alert-title">Waktunya ke RS!</strong>
+            <p id="alert-desc">Kontraksi Anda sudah sangat dekat dan kuat. Segera hubungi dokter atau ke RS.</p>
+            <a href="tel:119" class="btn btn-primary btn-small emergency-btn" style="margin-top:8px;">Panggil Ambulans (119)</a>
+          </div>
+        </div>
+
+        <div class="contraction-timer-card card">
+          <h2 class="section-title">Timer Kontraksi</h2>
+          <div class="timer-display" id="timer-display">00:00</div>
+          <div class="timer-controls">
+            <button id="btn-contraction-toggle" class="btn btn-primary btn-large pulse-btn">
+              <span id="btn-contraction-text">Mulai</span>
+            </button>
+            <button id="btn-contraction-reset" class="btn btn-ghost" style="display:none;">Reset</button>
+          </div>
+
+          <!-- Intensity Selection (shown while timing) -->
+          <div id="intensity-picker" class="intensity-picker hidden">
+            <p class="picker-label">Intensitas:</p>
+            <div class="intensity-btns">
+              <button class="intensity-btn" data-val="ringan">😊 Ringan</button>
+              <button class="intensity-btn selected" data-val="sedang">😐 Sedang</button>
+              <button class="intensity-btn" data-val="kuat">😣 Kuat</button>
+            </div>
+          </div>
+        </div>
+
+        <!-- Contraction Stats -->
+        <div id="contraction-stats" class="stats-row hidden">
+          <div class="stat-card card">
+            <span class="stat-value" id="stat-avg-duration">--</span>
+            <span class="stat-label">Rata-rata Durasi</span>
+          </div>
+          <div class="stat-card card">
+            <span class="stat-value" id="stat-avg-interval">--</span>
+            <span class="stat-label">Rata-rata Jarak</span>
+          </div>
+          <div class="stat-card card">
+            <span class="stat-value" id="stat-count">0</span>
+            <span class="stat-label">Total</span>
+          </div>
+        </div>
+
+        <!-- Contraction Log -->
+        <div class="log-section">
+          <div class="log-header">
+            <h3>Riwayat Kontraksi</h3>
+            <button id="btn-clear-contractions" class="btn btn-ghost btn-small">Hapus Semua</button>
+          </div>
+          <div id="contraction-log" class="log-list">
+            <p class="empty-state">Belum ada data kontraksi. Tekan "Mulai" untuk memulai.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== BABY MOVEMENTS ===== -->
+      <section id="panel-movements" class="panel">
+        <div class="card movement-card">
+          <h2 class="section-title">Gerakan Bayi Hari Ini</h2>
+          <div class="kick-counter">
+            <span class="kick-count" id="kick-count">0</span>
+            <span class="kick-label">tendangan/gerakan</span>
+          </div>
+          <button id="btn-kick" class="btn btn-accent btn-round kick-btn">
+            <span class="kick-btn-icon">👣</span>
+            <span>Catat Gerakan</span>
+          </button>
+          <p class="kick-hint">Target: 10 gerakan dalam 2 jam sesi aktif</p>
+        </div>
+
+        <!-- Movement Stats -->
+        <div class="stats-row">
+          <div class="stat-card card">
+            <span class="stat-value" id="stat-kicks-today">0</span>
+            <span class="stat-label">Hari Ini</span>
+          </div>
+          <div class="stat-card card">
+            <span class="stat-value" id="stat-kicks-week">0</span>
+            <span class="stat-label">Minggu Ini</span>
+          </div>
+        </div>
+
+        <!-- Movement Log -->
+        <div class="log-section">
+          <div class="log-header">
+            <h3>Riwayat Gerakan</h3>
+            <button id="btn-clear-movements" class="btn btn-ghost btn-small">Hapus Semua</button>
+          </div>
+          <div id="movement-log" class="log-list">
+            <p class="empty-state">Belum ada data gerakan. Tekan tombol di atas untuk mencatat.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== SYMPTOMS ===== -->
+      <section id="panel-symptoms" class="panel">
+        <div class="card">
+          <h2 class="section-title">Catat Gejala</h2>
+          <p class="section-subtitle">Ketuk untuk mencatat gejala yang Anda rasakan</p>
+          <div class="symptom-grid" id="symptom-grid">
+            <button class="symptom-btn" data-symptom="Mual">🤢 Mual</button>
+            <button class="symptom-btn" data-symptom="Pusing">😵 Pusing</button>
+            <button class="symptom-btn" data-symptom="Nyeri Punggung">🔙 Nyeri Punggung</button>
+            <button class="symptom-btn" data-symptom="Kram Perut">😖 Kram Perut</button>
+            <button class="symptom-btn" data-symptom="Bengkak">🦶 Bengkak</button>
+            <button class="symptom-btn" data-symptom="Sakit Kepala">🤕 Sakit Kepala</button>
+            <button class="symptom-btn" data-symptom="Kelelahan">😴 Kelelahan</button>
+            <button class="symptom-btn" data-symptom="Insomnia">🌙 Insomnia</button>
+            <button class="symptom-btn" data-symptom="Heartburn">🔥 Heartburn</button>
+            <button class="symptom-btn" data-symptom="Sesak Napas">💨 Sesak Napas</button>
+            <button class="symptom-btn" data-symptom="Sering BAK">🚽 Sering BAK</button>
+            <button class="symptom-btn" data-symptom="Mood Swing">😢 Mood Swing</button>
+          </div>
+        </div>
+
+        <!-- Symptom Log -->
+        <div class="log-section">
+          <div class="log-header">
+            <h3>Riwayat Gejala</h3>
+            <button id="btn-clear-symptoms" class="btn btn-ghost btn-small">Hapus Semua</button>
+          </div>
+          <div id="symptom-log" class="log-list">
+            <p class="empty-state">Belum ada gejala dicatat.</p>
+          </div>
+        </div>
+      </section>
+
+      <!-- ===== HOSPITAL BAG ===== -->
+      <section id="panel-bag" class="panel">
+        <div class="card">
+          <h2 class="section-title">Checklist Tas Rumah Sakit</h2>
+          <div class="bag-progress">
+            <div class="bag-progress-bar">
+              <div class="bag-progress-fill" id="bag-progress-fill" style="width:0%"></div>
+            </div>
+            <span class="bag-progress-text" id="bag-progress-text">0%</span>
+          </div>
+        </div>
+
+        <!-- Bag Categories -->
+        <div id="bag-checklist">
+          <!-- Dokumen -->
+          <div class="bag-category card">
+            <h3 class="bag-cat-title" data-toggle="cat-dokumen">
+              📄 Dokumen Penting
+              <span class="chevron">▾</span>
+            </h3>
+            <ul class="bag-items" id="cat-dokumen">
+              <li><label><input type="checkbox" data-bag="ktp"> KTP / Kartu Identitas</label></li>
+              <li><label><input type="checkbox" data-bag="bpjs"> Kartu BPJS / Asuransi</label></li>
+              <li><label><input type="checkbox" data-bag="buku-kia"> Buku KIA</label></li>
+              <li><label><input type="checkbox" data-bag="hasil-lab"> Hasil Lab & USG</label></li>
+              <li><label><input type="checkbox" data-bag="surat-nikah"> Surat Nikah (fotokopi)</label></li>
+            </ul>
+          </div>
+
+          <!-- Ibu -->
+          <div class="bag-category card">
+            <h3 class="bag-cat-title" data-toggle="cat-ibu">
+              👩 Keperluan Ibu
+              <span class="chevron">▾</span>
+            </h3>
+            <ul class="bag-items" id="cat-ibu">
+              <li><label><input type="checkbox" data-bag="baju-ganti"> Baju Ganti (2-3 set)</label></li>
+              <li><label><input type="checkbox" data-bag="daster"> Daster / Baju Menyusui</label></li>
+              <li><label><input type="checkbox" data-bag="cd"> Celana Dalam Sekali Pakai</label></li>
+              <li><label><input type="checkbox" data-bag="pembalut"> Pembalut Nifas</label></li>
+              <li><label><input type="checkbox" data-bag="toiletries"> Peralatan Mandi</label></li>
+              <li><label><input type="checkbox" data-bag="sandal"> Sandal</label></li>
+              <li><label><input type="checkbox" data-bag="breast-pad"> Breast Pad</label></li>
+              <li><label><input type="checkbox" data-bag="snack"> Snack & Minuman</label></li>
+              <li><label><input type="checkbox" data-bag="charger"> Charger HP</label></li>
+            </ul>
+          </div>
+
+          <!-- Bayi -->
+          <div class="bag-category card">
+            <h3 class="bag-cat-title" data-toggle="cat-bayi">
+              👶 Keperluan Bayi
+              <span class="chevron">▾</span>
+            </h3>
+            <ul class="bag-items" id="cat-bayi">
+              <li><label><input type="checkbox" data-bag="baju-bayi"> Baju Bayi (3-4 set)</label></li>
+              <li><label><input type="checkbox" data-bag="popok"> Popok Newborn</label></li>
+              <li><label><input type="checkbox" data-bag="topi"> Topi Bayi</label></li>
+              <li><label><input type="checkbox" data-bag="sarung-tangan"> Sarung Tangan & Kaki</label></li>
+              <li><label><input type="checkbox" data-bag="selimut"> Selimut / Bedong</label></li>
+              <li><label><input type="checkbox" data-bag="washlap"> Washlap</label></li>
+              <li><label><input type="checkbox" data-bag="minyak-telon"> Minyak Telon</label></li>
+            </ul>
+          </div>
+
+          <!-- Pendamping -->
+          <div class="bag-category card">
+            <h3 class="bag-cat-title" data-toggle="cat-pendamping">
+              🧑 Keperluan Pendamping
+              <span class="chevron">▾</span>
+            </h3>
+            <ul class="bag-items" id="cat-pendamping">
+              <li><label><input type="checkbox" data-bag="baju-pendamping"> Baju Ganti</label></li>
+              <li><label><input type="checkbox" data-bag="snack-p"> Snack & Minuman</label></li>
+              <li><label><input type="checkbox" data-bag="uang"> Uang Tunai</label></li>
+              <li><label><input type="checkbox" data-bag="kamera"> Kamera / HP</label></li>
+            </ul>
+          </div>
+        </div>
+      </section>
+    </main>
+
+    <!-- Toast Container -->
+    <div id="toast-container"></div>
+  </div>
+
+  <script>
+    // Register Service Worker for PWA
+    if ('serviceWorker' in navigator) {
+      window.addEventListener('load', () => {
+        navigator.serviceWorker.register('sw.js')
+          .then(reg => console.log('Service Worker registered', reg))
+          .catch(err => console.error('Service Worker registration failed:', err));
+      });
+    }
+  </script>
+  <script src="app.js"></script>
+</body>
+</html>
