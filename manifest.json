@@ -1,11 +1,11 @@
 {
-  "name": "BumpBuddy — Teman Kehamilan",
-  "short_name": "BumpBuddy",
+  "name": "Expecting Baby G",
+  "short_name": "Expecting Baby G",
   "description": "Aplikasi pendamping kehamilan untuk melacak kontraksi, gerakan bayi, dan tas RS.",
   "start_url": "./",
   "display": "standalone",
-  "background_color": "#0f0e17",
-  "theme_color": "#e8a4c8",
+  "background_color": "#ffffff",
+  "theme_color": "#ff2d55",
   "orientation": "portrait",
   "icons": [
     {
