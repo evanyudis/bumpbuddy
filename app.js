@@ -176,7 +176,7 @@ function applyUserSettingsUI() {
   const { userName, babyName, gender } = state.settings;
   
   // Set text
-  safeSetTxt('ui-baby-name', babyName || 'buddy');
+  safeSetTxt('ui-baby-name', babyName || 'Baby');
 
   // Set gender theme
   document.documentElement.setAttribute('data-gender', gender);
