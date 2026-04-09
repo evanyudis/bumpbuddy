@@ -21,11 +21,14 @@ const KEYS = {
 
 const DEFAULT_SETTINGS = {
   dueDate: '2026-04-14',
-  userName: 'Fara',
+  userName: '',
+  babyName: '',
+  gender: 'girl',
   partnerPhone: '',
   doctorPhone: '',
   hospitalName: '',
   hospitalPhone: '',
+  onboardingCompleted: false,
 };
 
 /* ========================
@@ -110,6 +113,7 @@ function haptic(type = 'light') {
    ======================== */
 function showToast(message, duration = 2600) {
   const container = document.getElementById('toast-container');
+  container.innerHTML = ''; // Clear existing toasts
   const toast = document.createElement('div');
   toast.className = 'toast';
   toast.textContent = message;
@@ -120,38 +124,117 @@ function showToast(message, duration = 2600) {
 /* ========================
    THEME MANAGER
    ======================== */
+let sysThemeMatcher = window.matchMedia('(prefers-color-scheme: dark)');
+
 function initTheme() {
-  const saved = localStorage.getItem(KEYS.THEME);
-  const systemDark = window.matchMedia('(prefers-color-scheme: dark)').matches;
-  const theme = saved ?? (systemDark ? 'dark' : 'light');
-  applyTheme(theme, false);
+  const saved = localStorage.getItem(KEYS.THEME) || 'system';
+  applyTheme(saved, false);
+  
+  sysThemeMatcher.addEventListener('change', () => {
+    if (localStorage.getItem(KEYS.THEME) === 'system') {
+      applyTheme('system', true);
+    }
+  });
 }
 
 function applyTheme(theme, animate = true) {
   const html = document.documentElement;
   if (animate) html.style.transition = 'background 0.3s, color 0.3s';
-  html.setAttribute('data-theme', theme);
+  
+  let actualTheme = theme;
+  if (theme === 'system') {
+    actualTheme = sysThemeMatcher.matches ? 'dark' : 'light';
+  }
+  
+  html.setAttribute('data-theme', actualTheme);
   localStorage.setItem(KEYS.THEME, theme);
   updateThemeUI(theme);
+  
   if (animate) setTimeout(() => html.style.transition = '', 400);
 }
 
 function updateThemeUI(theme) {
-  const icon = document.getElementById('theme-icon');
-  const btn  = document.getElementById('setting-theme-btn');
-  if (theme === 'dark') {
-    if (icon) icon.textContent = '🌙';
-    if (btn)  btn.textContent = '🌙 Gelap';
-  } else {
-    if (icon) icon.textContent = '☀️';
-    if (btn)  btn.textContent = '☀️ Terang';
-  }
+  document.querySelectorAll('.segment-btn').forEach(btn => {
+    if (btn.dataset.themeVal === theme) {
+      btn.classList.add('active');
+    } else {
+      btn.classList.remove('active');
+    }
+  });
 }
 
-function toggleTheme() {
-  const current = document.documentElement.getAttribute('data-theme');
-  applyTheme(current === 'dark' ? 'light' : 'dark');
-  haptic('medium');
+/* ========================
+   ONBOARDING & DYNAMIC PREFS
+   ======================== */
+function applyUserSettingsUI() {
+  // Safe update for DOM nodes
+  const safeSetTxt = (id, txt) => {
+    const el = document.getElementById(id);
+    if (el) el.textContent = txt;
+  };
+
+  const { userName, babyName, gender } = state.settings;
+  
+  // Set text
+  safeSetTxt('ui-baby-name', babyName || 'Bayi');
+
+  // Set gender theme
+  document.documentElement.setAttribute('data-gender', gender);
+}
+
+function initOnboarding() {
+  const overlay = document.getElementById('onboarding-overlay');
+  if (!overlay) return;
+
+  // Check if onboarding is needed
+  if (!state.settings.onboardingCompleted) {
+    overlay.classList.remove('hidden');
+
+    // Pre-fill existing defaults if any
+    const dueInput = document.getElementById('onboard-due-date');
+    const momInput = document.getElementById('onboard-mother-name');
+    const babyInput = document.getElementById('onboard-baby-name');
+    
+    if (dueInput) dueInput.value = state.settings.dueDate;
+    if (momInput) momInput.value = state.settings.userName;
+    if (babyInput) babyInput.value = state.settings.babyName;
+
+    let selectedGender = 'girl';
+    const genderOpts = document.querySelectorAll('.gender-option');
+    genderOpts.forEach(btn => {
+      btn.addEventListener('click', () => {
+        genderOpts.forEach(b => b.classList.remove('selected'));
+        btn.classList.add('selected');
+        selectedGender = btn.dataset.obGender;
+        haptic('light');
+        // Preview theme
+        document.documentElement.setAttribute('data-gender', selectedGender);
+      });
+    });
+
+    document.getElementById('btn-finish-onboarding').addEventListener('click', () => {
+      // Validate
+      if (dueInput && dueInput.value) state.settings.dueDate = dueInput.value;
+      if (momInput && momInput.value) state.settings.userName = momInput.value;
+      if (babyInput && babyInput.value) state.settings.babyName = babyInput.value;
+      state.settings.gender = selectedGender;
+      state.settings.onboardingCompleted = true;
+
+      saveData();
+      applyUserSettingsUI();
+      updateCountdown();
+
+      // Fancy exit
+      haptic('success');
+      overlay.style.opacity = '0';
+      overlay.style.filter = 'blur(10px)';
+      overlay.style.pointerEvents = 'none';
+      setTimeout(() => overlay.classList.add('hidden'), 500);
+      showToast('🎉 Selamat datang, persiapan dimulai!');
+    });
+  } else {
+    applyUserSettingsUI();
+  }
 }
 
 /* ========================
@@ -170,7 +253,7 @@ function updateCountdown() {
   if (diff <= 0) {
     setCountdown('00', '00', '00', '00');
     const heroWeek = document.getElementById('hero-week');
-    if (heroWeek) heroWeek.textContent = '🎉 Selamat atas kelahiran Baby G!';
+    if (heroWeek) heroWeek.textContent = `🎉 Selamat atas kelahiran ${state.settings.babyName || 'Bayimu'}!`;
     return;
   }
 
@@ -404,8 +487,11 @@ function renderContractionLog() {
 
   if (state.contractions.length === 0) {
     container.innerHTML = `<div class="empty-state">
-      <div class="empty-state-icon">⏱️</div>
-      <p>Belum ada kontraksi.<br>Tekan <strong>MULAI</strong> saat merasakan kontraksi.</p>
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      </div>
+      <div class="empty-state-title">Belum ada kontraksi</div>
+      <div class="empty-state-desc">Tekan MULAI saat kamu mulai merasakan kontraksi pertama.</div>
     </div>`;
     return;
   }
@@ -623,7 +709,7 @@ function updateMovementStats() {
   const hint = document.getElementById('kick-hint-text');
   if (hint) {
     if (todayCount >= 10) {
-      hint.textContent = '🎉 Target tercapai! Baby G aktif hari ini.';
+      hint.textContent = `🎉 Target tercapai! ${state.settings.babyName || 'Bayimu'} aktif hari ini.`;
     } else {
       hint.textContent = `${10 - todayCount} gerakan lagi untuk mencapai target harian`;
     }
@@ -635,7 +721,13 @@ function renderMovementLog() {
   container.innerHTML = '';
 
   if (state.movements.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">👶</div><p>Belum ada gerakan dicatat.<br>Ketuk tombol 👣 di atas.</p></div>`;
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M5 3s-1 1-1 4a12 12 0 0 0 12 12c3 0 4-1 4-4s-1-4-1-4"/><path d="M12 2v2"/><path d="M12 20v2"/><path d="M22 12h-2"/><path d="M4 12H2"/><path d="M19 19l-1-1"/><path d="M6 6L5 5"/><path d="M19 5l-1 1"/><path d="M6 18l-1 1"/></svg>
+      </div>
+      <div class="empty-state-title">Pantau gerakan bayi</div>
+      <div class="empty-state-desc">Ketuk tombol tendangan setiap kali kamu merasa si kecil bergerak.</div>
+    </div>`;
     return;
   }
 
@@ -691,7 +783,13 @@ function renderSymptomLog() {
   container.innerHTML = '';
 
   if (state.symptoms.length === 0) {
-    container.innerHTML = `<div class="empty-state"><div class="empty-state-icon">📝</div><p>Belum ada gejala dicatat.</p></div>`;
+    container.innerHTML = `<div class="empty-state">
+      <div class="empty-state-icon">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"/></svg>
+      </div>
+      <div class="empty-state-title">Riwayat gejala kosong</div>
+      <div class="empty-state-desc">Catatan gejala akan muncul di sini untuk memudahkan konsultasi dokter.</div>
+    </div>`;
     return;
   }
 
@@ -726,11 +824,17 @@ function initBag() {
   // Restore checklist state
   document.querySelectorAll('[data-bag]').forEach(chk => {
     chk.checked = !!state.checklist[chk.dataset.bag];
-    chk.addEventListener('change', () => {
+    chk.addEventListener('change', (e) => {
       state.checklist[chk.dataset.bag] = chk.checked;
       saveData();
       updateBagProgress();
-      haptic('light');
+      if (chk.checked) {
+        haptic('medium');
+        const rect = e.target.getBoundingClientRect();
+        createConfetti(rect.left + rect.width / 2, rect.top + rect.height / 2);
+      } else {
+        haptic('light');
+      }
     });
   });
 
@@ -747,6 +851,28 @@ function initBag() {
   });
 
   updateBagProgress();
+}
+
+function createConfetti(x, y) {
+  const colors = ['var(--success)', 'var(--accent)', 'var(--warning)', 'var(--teal)'];
+  for (let i = 0; i < 10; i++) {
+    const el = document.createElement('div');
+    el.className = 'particle';
+    el.style.left = (x - 3) + 'px';
+    el.style.top = (y - 3) + 'px';
+    el.style.background = colors[Math.floor(Math.random() * colors.length)];
+    
+    const angle = Math.random() * Math.PI * 2;
+    const velocity = 15 + Math.random() * 20; // Reduced velocity so it doesn't fly out of view instantly
+    const tx = Math.cos(angle) * velocity;
+    const ty = Math.sin(angle) * velocity - 10;
+    
+    el.style.setProperty('--tx', `${tx}px`);
+    el.style.setProperty('--ty', `${ty}px`);
+    
+    document.body.appendChild(el);
+    setTimeout(() => el.remove(), 800);
+  }
 }
 
 function updateBagProgress() {
@@ -780,27 +906,41 @@ function initSettings() {
   const safe = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
   safe('setting-due-date',      state.settings.dueDate);
   safe('setting-name',          state.settings.userName);
+  safe('setting-baby-name',     state.settings.babyName);
   safe('setting-partner-phone', state.settings.partnerPhone);
   safe('setting-doctor-phone',  state.settings.doctorPhone);
   safe('setting-hospital-name', state.settings.hospitalName);
   safe('setting-hospital-phone',state.settings.hospitalPhone);
 
+  const genderSelect = document.getElementById('setting-gender');
+  if (genderSelect) genderSelect.value = state.settings.gender || 'girl';
+
   // Theme toggle in settings
-  const themeBtn = document.getElementById('setting-theme-btn');
-  if (themeBtn) themeBtn.addEventListener('click', toggleTheme);
+  document.querySelectorAll('.segment-btn').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      applyTheme(e.target.dataset.themeVal);
+      haptic('medium');
+    });
+  });
 
   // Listen for settings changes
   const onSettingsChange = () => {
     state.settings.dueDate       = document.getElementById('setting-due-date')?.value || state.settings.dueDate;
     state.settings.userName       = document.getElementById('setting-name')?.value || '';
+    state.settings.babyName       = document.getElementById('setting-baby-name')?.value || '';
     state.settings.partnerPhone   = document.getElementById('setting-partner-phone')?.value || '';
     state.settings.doctorPhone    = document.getElementById('setting-doctor-phone')?.value || '';
     state.settings.hospitalName   = document.getElementById('setting-hospital-name')?.value || '';
     state.settings.hospitalPhone  = document.getElementById('setting-hospital-phone')?.value || '';
+    
+    if (genderSelect) state.settings.gender = genderSelect.value;
+
     saveData();
+    applyUserSettingsUI();
+    haptic('light');
   };
 
-  ['setting-due-date', 'setting-name', 'setting-partner-phone','setting-doctor-phone',
+  ['setting-due-date', 'setting-name', 'setting-baby-name', 'setting-gender', 'setting-partner-phone','setting-doctor-phone',
    'setting-hospital-name', 'setting-hospital-phone'].forEach(id => {
     const el = document.getElementById(id);
     if (el) el.addEventListener('change', onSettingsChange);
@@ -866,6 +1006,7 @@ function formatDate(ts) {
 function init() {
   loadData();
   initTheme();
+  initOnboarding();
   initTabs();
   initContractionTimer();
   initMovements();
@@ -880,8 +1021,7 @@ function init() {
   // Pattern check on load (resume state)
   checkLaborPattern();
 
-  // Theme toggle in header
-  document.getElementById('theme-toggle').addEventListener('click', toggleTheme);
+
 
   // Online / offline status
   window.addEventListener('online',  () => showToast('✅ Terhubung ke internet'));

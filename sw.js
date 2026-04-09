@@ -8,7 +8,7 @@ const ASSETS = [
   './style.css',
   './app.js',
   './manifest.json',
-  './img/icon.svg',
+  './img/app-icon.jpg',
   'https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=Outfit:wght@400;500;600;700;800&display=swap'
 ];
 

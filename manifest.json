@@ -1,6 +1,6 @@
 {
-  "name": "Expecting Baby G",
-  "short_name": "Expecting Baby G",
+  "name": "Bumpbuddy",
+  "short_name": "Bumpbuddy",
   "description": "Aplikasi pendamping kehamilan untuk melacak kontraksi, gerakan bayi, dan tas RS.",
   "start_url": "./",
   "display": "standalone",
@@ -9,14 +9,14 @@
   "orientation": "portrait",
   "icons": [
     {
-      "src": "img/icon.svg",
+      "src": "img/app-icon.jpg",
       "sizes": "192x192",
-      "type": "image/svg+xml"
+      "type": "image/jpeg"
     },
     {
-      "src": "img/icon.svg",
+      "src": "img/app-icon.jpg",
       "sizes": "512x512",
-      "type": "image/svg+xml"
+      "type": "image/jpeg"
     }
   ]
 }
