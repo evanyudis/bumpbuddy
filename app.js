@@ -176,10 +176,13 @@ function applyUserSettingsUI() {
   const { userName, babyName, gender } = state.settings;
   
   // Set text
-  safeSetTxt('ui-baby-name', babyName || 'Bayi');
+  safeSetTxt('ui-baby-name', babyName || 'buddy');
 
   // Set gender theme
   document.documentElement.setAttribute('data-gender', gender);
+
+  // Sync settings tab inputs (in case onboarding just finished)
+  syncSettingsInputs();
 }
 
 function initOnboarding() {
@@ -902,8 +905,7 @@ function updateBagProgress() {
 /* ========================
    SETTINGS
    ======================== */
-function initSettings() {
-  // Populate fields
+function syncSettingsInputs() {
   const safe = (id, val) => { const el = document.getElementById(id); if (el) el.value = val || ''; };
   safe('setting-due-date',      state.settings.dueDate);
   safe('setting-name',          state.settings.userName);
@@ -915,6 +917,11 @@ function initSettings() {
 
   const genderSelect = document.getElementById('setting-gender');
   if (genderSelect) genderSelect.value = state.settings.gender || 'girl';
+}
+
+function initSettings() {
+  // Populate fields
+  syncSettingsInputs();
 
   // Theme toggle in settings
   document.querySelectorAll('.segment-btn').forEach(btn => {
