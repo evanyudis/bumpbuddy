@@ -1,6 +1,6 @@
 /**
- * Expecting Baby G — App.js v2
- * iOS 26 Liquid Glass Revamp
+ * Bumpbuddy — App.js
+ * iOS 26 Liquid Glass Design System
  * Full feature set with pattern detection, theme manager, and settings
  */
 
@@ -890,11 +890,12 @@ function updateBagProgress() {
   }
 
   // Update per-category counts
-  const categories = { dokumen: 5, ibu: 9, bayi: 7, pendamping: 4 };
-  Object.entries(categories).forEach(([cat, max]) => {
+  const categories = ['dokumen', 'ibu', 'bayi', 'pendamping'];
+  categories.forEach(cat => {
+    const catItems = document.querySelectorAll(`#cat-${cat} [data-bag]`).length;
     const catChecked = document.querySelectorAll(`#cat-${cat} [data-bag]:checked`).length;
     const countEl = document.getElementById(`count-${cat}`);
-    if (countEl) countEl.textContent = `${catChecked}/${max}`;
+    if (countEl) countEl.textContent = `${catChecked}/${catItems}`;
   });
 }
 
@@ -973,7 +974,7 @@ function exportData() {
   const url  = URL.createObjectURL(blob);
   const a    = document.createElement('a');
   a.href     = url;
-  a.download = `expecting-baby-g-backup-${new Date().toISOString().slice(0,10)}.json`;
+  a.download = `bumpbuddy-backup-${new Date().toISOString().slice(0,10)}.json`;
   a.click();
   URL.revokeObjectURL(url);
   showToast('📤 Data berhasil diekspor');
