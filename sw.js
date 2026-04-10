@@ -1,7 +1,7 @@
 /* ===================================================
    Bumpbuddy — Service Worker v3 (Rebranded)
    =================================================== */
-const CACHE_NAME = 'bumpbuddy-cache-v3';
+const CACHE_NAME = 'bumpbuddy-cache-v4';
 const ASSETS = [
   './',
   './index.html',
